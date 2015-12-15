@@ -58,3 +58,5 @@ class PlayerGame(db.Entity):
 
     opponent = Required(Team)
     player = Required(Player)
+
+db.generate_mapping(create_tables=True)

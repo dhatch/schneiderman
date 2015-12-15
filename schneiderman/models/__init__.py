@@ -1,7 +1,7 @@
 from .db import db
 from .models import Player, PlayerGame, Team
 
-__ALL__ = [
+__all__ = [
     'db',
     'Player',
     'PlayerGame',

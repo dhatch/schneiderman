@@ -151,7 +151,7 @@ class NbaPlayerGameLog(NbaApiResource):
                 {
                     'id' : int,
                     'playerId': int,
-                    'date' : datetime.date,
+                    'date' : str,
                     'isHome' : bool,
                     'opponentTeamCode': str,
                     'didWin' bool,
@@ -189,7 +189,7 @@ class NbaPlayerGameLog(NbaApiResource):
             rt = dict()
             rt['id'] = int(game[2])
             rt['playerId'] = game[1]
-            rt['date'] = dateutil.parser.parse(game[3])
+            rt['date'] = game[3]
 
             # Parse matchup
             matchup = game[4]

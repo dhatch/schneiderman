@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+"""Scheniderman scraper.
+
+Usage: scrape [options] [<data_path>]
+
+data_path defaults to data/scrape/.
+
+Options:
+    -h --help Show this screen.
+    -n <threads>, --threads=<threads>  The number of threads to use.
+"""
+
+import os, os.path
+import json
+import multiprocessing
+
+from docopt import docopt
+
+from schneiderman.scrape.nba_stats.api import *
+
+def load_team(team):
+    team_detail = NbaTeamInfo(team['id']).json()
+    return team_detail
+
+def get_teams(threads):
+    team_list = NbaTeamList().json()
+    pool = multiprocessing.Pool(threads)
+    return pool.map(load_team, team_list)
+
+def get_players():
+    players = NbaPlayerList().json()
+    return players
+
+def get_game_log(args):
+    player_id, data_path = args
+    gl = NbaPlayerGameLog(player_id)
+    log = gl.json()
+    with open(data_path, 'w') as f:
+        json.dump(log, f)
+
+def get_game_logs(players, data_path, threads):
+
+    players = map(lambda p: (p['id'],
+                             os.path.join(data_path,
+                                          p['name'].replace(' ', '_') + '.json')),
+                  players)
+    pool = multiprocessing.Pool(threads)
+    pool.map(get_game_log, players)
+    return len(players)
+
+def scrape(data_path, threads):
+    print "Loading teams..."
+    teams = get_teams(threads)
+    team_path = os.path.join(data_path, 'teams.json')
+    with open(team_path, 'w') as team_file:
+        json.dump(teams, team_file)
+
+    print "Stored %d teams in %s." % (len(teams), team_path)
+
+    print "Loading players..."
+    players = get_players()
+    player_path = os.path.join(data_path, 'players.json')
+
+    with open(player_path, 'w') as player_file:
+        json.dump(players, player_file)
+
+    print "Stored %d players in %s." % (len(players), player_path)
+
+    print "Loading game logs..."
+    game_log_path = os.path.join(data_path, 'game_logs')
+    if not os.path.exists(game_log_path):
+        os.makedirs(game_log_path)
+
+    number_logs = get_game_logs(players, game_log_path, threads)
+    print "Stored %d game logs in %s." % (number_logs, game_log_path)
+
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    if args.get('data_path', None) is None:
+        args['data_path'] = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                         '..',
+                                         'data',
+                                         'scrape')
+        if not os.path.exists(args['data_path']):
+            os.makedirs(args['data_path'])
+
+    if args.get('threads', None) is None:
+        args['threads'] = multiprocessing.cpu_count()
+
+    scrape(args['data_path'], args['threads'])
