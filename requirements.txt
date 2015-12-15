@@ -6,3 +6,4 @@ scipy==0.16.1
 ipython==4.0.1
 python-dateutil==2.4.2
 pony==0.6.1
+docopt==0.6.2
