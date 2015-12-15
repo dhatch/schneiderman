@@ -174,7 +174,7 @@ class NbaPlayerGameLog(NbaApiResource):
                     'turnovers': int,
                     'personalFouls' : int,
                     'points' : int,
-                    'plusMinus': int
+                    'plusMinus': float
                 }
             ]
 
