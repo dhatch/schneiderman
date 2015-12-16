@@ -5,7 +5,7 @@ Usage: dave_clean
 """
 import os.path
 
-import docopt
+from docopt import docopt
 import pandas as pd
 import numpy as np
 
@@ -22,30 +22,32 @@ POSITIONS = [
 ]
 
 def output_file_for_position(position):
-    os.path.join(PROJECT_DIR, 'data', 'cleaned', position + '.csv')
+    return os.path.join(PROJECT_DIR, 'data', 'cleaned', position + '.csv')
 
-def player_for_position(position):
-    return Player.select(lambda p: p.position == position)
+@db_session
+def players_for_position(position):
+    return Player.select(lambda p: p.position == position)[:]
 
+@db_session
 def games_for_player(player):
-    return PlayerGame.select(lambda g: g.player == player).order_by(PlayerGame.date)
+    return PlayerGame.select(lambda g: g.player == player).order_by(PlayerGame.date)[:]
 
 def calculate_rolling_averages(df, period):
-    return pd.rolling_mean(df, window=period)
+    return pd.rolling_mean(df.shift(1), window=period)
 
-
+@db_session
 def df_for_player(player):
     games = [g.to_dict(exclude=[
                 'didWin',
                 'opponent'
              ]) for g in games_for_player(player)[:]]
     player_df = pd.DataFrame(games)
-    import pdb; pdb.set_trace()
-
 
     ra_df = player_df.select_dtypes(include=[np.number]).drop(['id', 'player'], 1)
+    rolling_averages_1 = calculate_rolling_averages(ra_df, 1)
     rolling_averages_5 = calculate_rolling_averages(ra_df, 5)
     rolling_averages_10 = calculate_rolling_averages(ra_df, 10)
+    rolling_averages_1.rename(columns=lambda n: n + '-1', inplace=True)
     rolling_averages_5.rename(columns=lambda n: n + '-5', inplace=True)
     rolling_averages_10.rename(columns=lambda n: n + '-10', inplace=True)
 
@@ -55,20 +57,36 @@ def df_for_player(player):
     hasDoubleDouble = nDouble > 1
     hasTripleDouble = nDouble > 2
 
-    player_df['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
-    pf = pd.concat([player_df.drop(['id', 'player', 'date'], 1), rolling_averages_5, rolling_averages_10], axis=1)
-    pf['isHome'] *= 1  # Convert to integer.
+    pf = pd.concat([rolling_averages_1, rolling_averages_5, rolling_averages_10], axis=1)
+    pf['isHome'] = player_df['isHome'] * 1  # Convert to integer.
+    pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
 
     pf['dfs'] = player_df['points'] + player_df['threePointMade'] * 0.5 + player_df['totalRebounds'] * 1.25
     pf['dfs'] += player_df['assists'] * 1.5 + player_df['steals'] * 2 + player_df['blocks'] * 2
     pf['dfs'] += -player_df['turnovers'] + hasDoubleDouble * 1.5 + hasTripleDouble * 3
+    pf['playerId'] = player_df['player']
+    pf['player_dkname'] = player.dk_name
+
     # Throwaway the first 10 games.
     return pf.loc[10:,:]
 
+def store_latest_game(player, player_df):
+    # TODO: store the latest game in the DB :D
+    pass
+
+@db_session
 def main():
     for position in POSITIONS:
-        for player in players_for_position(position):
-            df_for_player(player)
+        with open(output_file_for_position(position), 'w') as pos_file:
+            first = True
+            for player in players_for_position(position):
+                print "Write %s games." % player.name
+                if count(player.games) <= 1:
+                    continue
+                player_df = df_for_player(player)
+                player_df.drop('playerId', 1).to_csv(pos_file, header=first, index=False)
+                first = False
+                store_latest_game(player, player_df)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
