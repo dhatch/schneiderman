@@ -7,3 +7,4 @@ ipython==4.0.1
 python-dateutil==2.4.2
 pony==0.6.1
 docopt==0.6.2
+fuzzywuzzy==0.8.0
