@@ -38,7 +38,7 @@ def main(fileName, game_date):
     joined_df['game_date'] = game_date
     joined_df['days_rest'] = (joined_df['game_date'] - pandas.to_datetime(joined_df['date'])).dt.days
 
-    joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'game_date'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'todays_games.csv'),
+    joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'game_date', 'dfs'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'todays_games.csv'),
                    header=False, index=False)
 
 if __name__ == '__main__':
