@@ -4,6 +4,7 @@
 Usage: dave_clean
 """
 import os.path
+import csv
 
 from docopt import docopt
 import pandas as pd
@@ -39,8 +40,15 @@ def calculate_rolling_averages(df, period):
 def df_for_player(player):
     games = [g.to_dict(exclude=[
                 'didWin',
-                'opponent'
-             ]) for g in games_for_player(player)[:]]
+             ], related_objects=True) for g in games_for_player(player)[:]]
+
+    def transform(g):
+        g['oppAbv'] = g['opponent'].dk_abbreviation
+        del g['opponent']
+        g['player'] = g['player'].id
+        return g
+
+    games = [transform(g) for g in games]
     player_df = pd.DataFrame(games)
 
     ra_df = player_df.select_dtypes(include=[np.number]).drop(['id', 'player'], 1)
@@ -60,6 +68,7 @@ def df_for_player(player):
     pf = pd.concat([rolling_averages_1, rolling_averages_5, rolling_averages_10], axis=1)
     pf['isHome'] = player_df['isHome'] * 1  # Convert to integer.
     pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
+    pf['date'] = player_df['date']
 
     pf['dfs'] = player_df['points'] + player_df['threePointMade'] * 0.5 + player_df['totalRebounds'] * 1.25
     pf['dfs'] += player_df['assists'] * 1.5 + player_df['steals'] * 2 + player_df['blocks'] * 2
@@ -67,15 +76,16 @@ def df_for_player(player):
     pf['playerId'] = player_df['player']
     pf['player_dkname'] = player.dk_name
 
+    team_columns = ['opp-' + t for t in select(t.dk_abbreviation for t in Team)]
+    for col in team_columns:
+        pf[col] = (col.split('-')[1] == player_df['oppAbv']) * 1
+
     # Throwaway the first 10 games.
     return pf.loc[10:,:]
 
-def store_latest_game(player, player_df):
-    # TODO: store the latest game in the DB :D
-    pass
-
 @db_session
 def main():
+    latest_games = csv.writer(open(output_file_for_position('latest_games'), 'w'))
     for position in POSITIONS:
         with open(output_file_for_position(position), 'w') as pos_file:
             first = True
@@ -84,9 +94,14 @@ def main():
                 if count(player.games) <= 1:
                     continue
                 player_df = df_for_player(player)
-                player_df.drop('playerId', 1).to_csv(pos_file, header=first, index=False)
+                player_df.drop(['playerId', 'date'], 1).to_csv(pos_file, header=first, index=False)
+                try:
+                    if first:
+                        latest_games.writerow(list(player_df.columns))
+                    latest_games.writerow(list(player_df.iloc[-1,:]))
+                except IndexError:
+                    print "Warn: No latest game for %s" % player.name
                 first = False
-                store_latest_game(player, player_df)
 
 if __name__ == '__main__':
     args = docopt(__doc__)

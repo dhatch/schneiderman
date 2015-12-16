@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+"""Today's games.
+
+Usage: todays_games <file> <game_date>
+
+Load a game file and produce output CSV in data/cleaned to create lineups.
+"""
+
+import os.path
+
+import pandas
+import dateutil.parser
+from docopt import docopt
+
+from schneiderman.models import *
+
+PROJECT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+@db_session
+def main(fileName, game_date):
+    salary_df = pandas.read_csv(fileName)
+    latest_games_df = pandas.read_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'latest_games.csv'))
+    for i in salary_df.index:
+        games = str(salary_df["GameInfo"][i]).replace('@', ' ').split()
+        salary_df.loc[i, "Home"] = games[1] == salary_df.loc[i, "teamAbbrev"]
+        if salary_df.loc[i, "Home"]:
+            salary_df.loc[i, "Opponent"] = games[0]
+        else:
+            salary_df.loc[i, "Opponent"] = games[1]
+
+    salary_df = salary_df.drop(['GameInfo', 'teamAbbrev'], 1)
+    joined_df = pandas.merge(salary_df, latest_games_df, left_on='Name', right_on='player_dkname', how='inner')
+
+    team_columns = [c for c in joined_df.columns if 'opp-' in c]
+    for col in team_columns:
+        joined_df[col] = (col.split('-')[1] == joined_df['Opponent']) * 1
+    joined_df['isHome'] = joined_df['Home'] * 1
+    joined_df['game_date'] = game_date
+    joined_df['days_rest'] = (joined_df['game_date'] - pandas.to_datetime(joined_df['date'])).dt.days
+
+    joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'game_date'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'todays_games.csv'),
+                   header=False, index=False)
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    main(args['<file>'], dateutil.parser.parse(args['<game_date>']))
