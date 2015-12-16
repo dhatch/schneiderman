@@ -70,15 +70,15 @@ def df_for_player(player):
     pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
     pf['date'] = player_df['date']
 
+    team_columns = ['opp-' + t for t in select(t.dk_abbreviation for t in Team)]
+    for col in team_columns:
+        pf[col] = (col.split('-')[1] == player_df['oppAbv']) * 1
+
     pf['dfs'] = player_df['points'] + player_df['threePointMade'] * 0.5 + player_df['totalRebounds'] * 1.25
     pf['dfs'] += player_df['assists'] * 1.5 + player_df['steals'] * 2 + player_df['blocks'] * 2
     pf['dfs'] += -player_df['turnovers'] + hasDoubleDouble * 1.5 + hasTripleDouble * 3
     pf['playerId'] = player_df['player']
     pf['player_dkname'] = player.dk_name
-
-    team_columns = ['opp-' + t for t in select(t.dk_abbreviation for t in Team)]
-    for col in team_columns:
-        pf[col] = (col.split('-')[1] == player_df['oppAbv']) * 1
 
     # Throwaway the first 10 games.
     return pf.loc[10:,:]
@@ -94,7 +94,7 @@ def main():
                 if count(player.games) <= 1:
                     continue
                 player_df = df_for_player(player)
-                player_df.drop(['playerId', 'date'], 1).to_csv(pos_file, header=first, index=False)
+                player_df.drop(['playerId', 'date'], 1).to_csv(pos_file, header=False, index=False)
                 try:
                     if first:
                         latest_games.writerow(list(player_df.columns))
