@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+"""Load scrape files into database (sqlite).
+
+Usage: load_db [<data_path>]
+
+Expects DB_PATH environment variable to be set as required.
+"""
+
+import os
+import json
+import csv
+
+import fuzzywuzzy.process
+from docopt import docopt
+import dateutil.parser
+
+from schneiderman.models import *
+
+NBA_ABBREVIATION_TO_DK = {
+    'ATL': 'Atl',
+    'BKN': 'Bkn',
+    'BOS': 'Bos',
+    'CHA': 'Cha',
+    'CHI': 'Chi',
+    'CLE': 'Cle',
+    'DAL': 'Dal',
+    'DEN': 'Den',
+    'DET': 'Det',
+    'GSW': 'GS',
+    'HOU': 'Hou',
+    'IND': 'Ind',
+    'LAC': 'LAC',
+    'LAL': 'LAL',
+    'MEM': 'Mem',
+    'MIA': 'Mia',
+    'MIL': 'Mil',
+    'MIN': 'Min',
+    'NOP': 'NO',
+    'NYK': 'NY',
+    'OKC': 'OKC',
+    'ORL': 'Orl',
+    'PHI': 'Phi',
+    'PHX': 'Pho',
+    'POR': 'Por',
+    'SAC': 'Sac',
+    'SAS': 'SA',
+    'TOR': 'Tor',
+    'UTA': 'Uta',
+    'WAS': 'Was'
+}
+
+PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+DK_PLAYERS = os.path.join(PROJECT_ROOT, 'static', 'DraftKingsPositions.csv')
+
+@db_session
+def load_teams(team_path):
+    teams = None
+    with open(team_path) as team_file:
+        teams = json.load(team_file)
+
+    for team in teams:
+        team.update({
+            'dk_abbreviation' : NBA_ABBREVIATION_TO_DK[team['abbreviation']],
+            'nba_abbreviation' : team['abbreviation']
+        })
+        del team['abbreviation']
+        Team(**team)
+
+@db_session
+def load_players(player_path):
+    with open(DK_PLAYERS) as dk_player_file:
+        dk_players = list(csv.reader(dk_player_file))
+
+    player_pos = {}
+    for (position, player, _, _) in dk_players:
+        player_pos[player] = position
+
+    players = None
+    with open(player_path) as player_file:
+        players = json.load(player_file)
+
+    for player in players:
+        # Fuzzy join the draft kings position data with our player info.
+        dk_name, _ = fuzzywuzzy.process.extractOne(player['name'],
+                                                   player_pos.keys())
+        player['position'] = player_pos[dk_name]
+        player['dk_name'] = dk_name
+        if player['team']['id'] == 0:
+            print "Warn: %s has no team." % player['name']
+            continue
+
+        player['team'] = Team[player['team']['id']]
+        Player(**player)
+
+@db_session
+def load_games(game_log_path):
+    logs = os.listdir(game_log_path)
+    for log in map(lambda p: os.path.join(game_log_path, p), logs):
+        gl = None
+        with open(log) as f:
+            gl = json.load(f)
+
+        for game in gl:
+            try:
+                game['player'] = Player[game['playerId']]
+            except ObjectNotFound:
+                break
+
+            del game['playerId']
+            game['date'] = dateutil.parser.parse(game['date'])
+            game['opponent'] = Team.get(
+                nba_abbreviation=game['opponentTeamCode'])
+            del game['opponentTeamCode']
+            PlayerGame(**game)
+
+def load_db(data_path):
+    reset_db()
+    load_teams(os.path.join(data_path, 'teams.json'))
+    load_players(os.path.join(data_path, 'players.json'))
+    load_games(os.path.join(data_path, 'game_logs'))
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    if args.get('data_path', None) is None:
+        args['data_path'] = os.path.join(PROJECT_ROOT, 'data', 'scrape')
+    load_db(args['data_path'])

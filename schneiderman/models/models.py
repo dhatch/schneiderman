@@ -23,6 +23,7 @@ class Team(db.Entity):
 class Player(db.Entity):
     id = PrimaryKey(int, auto=False)
     name = Required(str, 150)
+    dk_name = Optional(str, 150)
     startYear = Optional(int)
     endYear = Optional(int)
     position = Optional(str, 20)
@@ -31,7 +32,7 @@ class Player(db.Entity):
     games = Set('PlayerGame')
 
 class PlayerGame(db.Entity):
-    id = PrimaryKey(int, auto=False)
+    id = Required(int)
     date = Required(datetime.date)
     isHome = Optional(bool)
     didWin = Optional(bool)
@@ -58,5 +59,6 @@ class PlayerGame(db.Entity):
 
     opponent = Required(Team)
     player = Required(Player)
+    PrimaryKey(id, player)
 
 db.generate_mapping(create_tables=True)

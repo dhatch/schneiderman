@@ -1,7 +1,9 @@
+import urlparse
+import re
+
 import requests
 import dateutil.parser
 
-import urlparse
 
 
 API_ROOT = 'http://stats.nba.com/stats/'
@@ -185,6 +187,10 @@ class NbaPlayerGameLog(NbaApiResource):
             'PlayerID' : self.player_id
         })
         json = super(NbaPlayerGameLog, self).json(**params)
+
+        home_matchup_re = re.compile(r'^.+?vs\. (\w{3})$')
+        away_matchup_re = re.compile(r'^.+?@ (\w{3})$')
+
         def transform(game):
             rt = dict()
             rt['id'] = int(game[2])
@@ -195,10 +201,10 @@ class NbaPlayerGameLog(NbaApiResource):
             matchup = game[4]
             if 'vs' in matchup:
                 rt['isHome'] = True
-                rt['opponentTeamCode'] = matchup.split('vs')[1].strip()
+                rt['opponentTeamCode'] = home_matchup_re.match(matchup).group(1)
             elif '@' in matchup:
                 rt['isHome'] = False
-                rt['opponentTeamCode'] = matchup.split('@')[1].strip()
+                rt['opponentTeamCode'] = away_matchup_re.match(matchup).group(1)
             else:
                 raise TypeError("Invalid matchup")
 
