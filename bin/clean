@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+"""Clean and output player features for the regression.
+
+Usage: dave_clean
+"""
+import os.path
+
+import docopt
+import pandas as pd
+import numpy as np
+
+from schneiderman.models import *
+
+PROJECT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+POSITIONS = [
+    'PF',
+    'SF',
+    'C',
+    'SG',
+    'PG'
+]
+
+def output_file_for_position(position):
+    os.path.join(PROJECT_DIR, 'data', 'cleaned', position + '.csv')
+
+def player_for_position(position):
+    return Player.select(lambda p: p.position == position)
+
+def games_for_player(player):
+    return PlayerGame.select(lambda g: g.player == player).order_by(PlayerGame.date)
+
+def calculate_rolling_averages(df, period):
+    return pd.rolling_mean(df, window=period)
+
+
+def df_for_player(player):
+    games = [g.to_dict(exclude=[
+                'didWin',
+                'opponent'
+             ]) for g in games_for_player(player)[:]]
+    player_df = pd.DataFrame(games)
+    import pdb; pdb.set_trace()
+
+
+    ra_df = player_df.select_dtypes(include=[np.number]).drop(['id', 'player'], 1)
+    rolling_averages_5 = calculate_rolling_averages(ra_df, 5)
+    rolling_averages_10 = calculate_rolling_averages(ra_df, 10)
+    rolling_averages_5.rename(columns=lambda n: n + '-5', inplace=True)
+    rolling_averages_10.rename(columns=lambda n: n + '-10', inplace=True)
+
+    # Calculate daily fantasy score
+    nDouble = ((player_df['points'] > 9) * 1 + (player_df['assists'] > 9) * 1 + (player_df['totalRebounds'] > 9) * 1 +
+        (player_df['steals'] > 9) * 1 + (player_df['blocks'] > 9) * 1)
+    hasDoubleDouble = nDouble > 1
+    hasTripleDouble = nDouble > 2
+
+    player_df['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
+    pf = pd.concat([player_df.drop(['id', 'player', 'date'], 1), rolling_averages_5, rolling_averages_10], axis=1)
+    pf['isHome'] *= 1  # Convert to integer.
+
+    pf['dfs'] = player_df['points'] + player_df['threePointMade'] * 0.5 + player_df['totalRebounds'] * 1.25
+    pf['dfs'] += player_df['assists'] * 1.5 + player_df['steals'] * 2 + player_df['blocks'] * 2
+    pf['dfs'] += -player_df['turnovers'] + hasDoubleDouble * 1.5 + hasTripleDouble * 3
+    # Throwaway the first 10 games.
+    return pf.loc[10:,:]
+
+def main():
+    for position in POSITIONS:
+        for player in players_for_position(position):
+            df_for_player(player)
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    main()
