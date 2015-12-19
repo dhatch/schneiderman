@@ -33,8 +33,8 @@ def players_for_position(position):
 def games_for_player(player):
     return PlayerGame.select(lambda g: g.player == player).order_by(PlayerGame.date)[:]
 
-def calculate_rolling_averages(df, period):
-    return pd.rolling_mean(df.shift(1), window=period)
+def calculate_rolling_averages(df, period, shift=1):
+    return pd.rolling_mean(df.shift(shift), window=period)
 
 @db_session
 def df_for_player(player):
@@ -50,6 +50,7 @@ def df_for_player(player):
 
     games = [transform(g) for g in games]
     player_df = pd.DataFrame(games)
+    player_df = player_df[player_df.minutesPlayed > 1] # Drop games when not played.
 
     ra_df = player_df.select_dtypes(include=[np.number]).drop(['id', 'player'], 1)
     rolling_averages_1 = calculate_rolling_averages(ra_df, 1)
