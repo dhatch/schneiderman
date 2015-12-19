@@ -37,9 +37,9 @@ def main(fileName, game_date):
     joined_df['isHome'] = joined_df['Home'] * 1
     joined_df['game_date'] = game_date
     joined_df['days_rest'] = (joined_df['game_date'] - pandas.to_datetime(joined_df['date'])).dt.days
-    joined_df['days_rest_1'] = (joined_df.days_rest <= 1) * 1
-    joined_df['days_rest_2'] = (1 < joined_df.days_rest <= 2) * 1
-    joined_df['days_rest_3+'] = (2 < joined_df.days_rest) * 1
+    joined_df['days_rest_1'] = (pf.days_rest <= 1) * 1
+    joined_df['days_rest_2'] = ((pf.days_rest > 1) & (pf.days_rest <= 2)) * 1
+    joined_df['days_rest_3+'] = (2 < pf.days_rest) * 1
 
     joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'days_rest', 'game_date', 'dfs'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'todays_games.csv'),
                    header=False, index=False)
