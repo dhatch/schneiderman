@@ -74,6 +74,7 @@ def df_for_player(player):
         pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
     except AttributeError:
         pf['days_rest'] = 3
+
     pf['days_rest_1'] = (pf.days_rest <= 1) * 1
     pf['days_rest_2'] = ((pf.days_rest > 1) & (pf.days_rest <= 2)) * 1
     pf['days_rest_3+'] = (2 < pf.days_rest) * 1
@@ -90,7 +91,7 @@ def df_for_player(player):
     pf['player_dkname'] = player.dk_name
 
     # Throwaway the first 10 games.
-    return pf.loc[10:,:]
+    return pf.iloc[10:,:]
 
 @db_session
 def main():
