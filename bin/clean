@@ -68,7 +68,15 @@ def df_for_player(player):
 
     pf = pd.concat([rolling_averages_1, rolling_averages_5, rolling_averages_10], axis=1)
     pf['isHome'] = player_df['isHome'] * 1  # Convert to integer.
-    pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
+
+    # Convert days rest to categorial variable.
+    try:
+        pf['days_rest'] = (player_df['date'] - player_df['date'].shift(1)).dt.days
+    except AttributeError:
+        pf['days_rest'] = 3
+    pf['days_rest_1'] = (pf.days_rest <= 1) * 1
+    pf['days_rest_2'] = ((pf.days_rest > 1) & (pf.days_rest <= 2)) * 1
+    pf['days_rest_3+'] = (2 < pf.days_rest) * 1
     pf['date'] = player_df['date']
 
     team_columns = ['opp-' + t for t in select(t.dk_abbreviation for t in Team)]
@@ -95,7 +103,7 @@ def main():
                 if count(player.games) <= 1:
                     continue
                 player_df = df_for_player(player)
-                player_df.drop(['playerId', 'date'], 1).to_csv(pos_file, header=False, index=False)
+                player_df.drop(['playerId', 'date', 'days_rest'], 1).to_csv(pos_file, header=False, index=False)
                 try:
                     if first:
                         latest_games.writerow(list(player_df.columns))
