@@ -1,4 +1,7 @@
 #!/bin/sh
 
-export PYTHONPATH=`pwd`
-export DB_PATH=`pwd`/data/db.sqlite
+DIR=`dirname $0`
+
+
+$(cd $DIR/../ && export PYTHONPATH=`pwd`) || exit 1;
+$(cd $DIR/../ && export DB_PATH=`pwd`/data/db.sqlite) || exit 1;
