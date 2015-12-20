@@ -1,9 +1,18 @@
 #!/usr/bin/env python
 import random
-import itertools
+import os
+import sys
 from heapq import nlargest
 import numpy
 import math
+
+
+PROJECT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..'))
+
+TRAIN_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'train')
+PREDICT_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'predict')
 
 
 class player:
@@ -173,7 +182,7 @@ def main():
     players["G"] = []
     players["F"] = []
     players["UTIL"] = []
-    a = open('data/predict/predictions.csv', 'r')
+    a = open(os.path.join(PREDICT_DATA_DIR, 'predictions.csv'), 'r')
     for line in a:
         line = line.split(',')
         p = player(name=line[0], position=line[1], e_v=float(line[2]), var=float(
@@ -186,7 +195,7 @@ def main():
         players['UTIL'].append(p)
     # set variances
     for i in range(1, 6):
-        a = open('data/train/resid_' + position_order[i] + '.csv', 'r')
+        a = open(os.path.join(TRAIN_DATA_DIR, 'resid_' + position_order[i] + '.csv'), 'r')
         # key player name, key (sum squared resid, num_games)
         variance_dict = {}
         for line in a:
@@ -213,25 +222,25 @@ def main():
     tuning = []
     # tune threshold
     for i in range(0, tuning_num):
-        print i
-        print "in tuning"
+        print >> sys.stderr, i
+        print >> sys.stderr, "in tuning"
         cur_lineup = get_lineup(players)
         tuning.append(get_score(cur_lineup))
     indices = range(0, tuning_num)
     tuning = iter(tuning)
     threshold = min(nlargest(thresh_num, tuning))
 
-    print "TUNED"
+    print >> sys.stderr, "TUNED"
     # make a box of lineups
     for i in range(0, num_lineups):
-        print i
+        print >> sys.stderr, i
         score = 0
         while (score < threshold):
             cur_lineup = get_lineup(players)
             score = get_score(cur_lineup)
         lineups.append(cur_lineup)
         times.append(0)
-    print "made a box"
+    print >> sys.stderr, "made a box"
 
     # shake the box num_shakes times
     for i in range(0, num_shakes):
@@ -281,7 +290,7 @@ def main():
             new_times.append(0)
         lineups = new_lineups
         times = new_times
-        print times
+        print >> sys.stderr, times
 
     player_times = {}  # key player name, value number of times he was chosen
     for (l, t) in zip(lineups, times):
