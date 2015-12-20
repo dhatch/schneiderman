@@ -6,7 +6,7 @@ Usage: todays_games <file> <game_date>
 Load a game file and produce output CSV in data/cleaned to create lineups.
 """
 
-import os.path
+import os
 
 import pandas
 import dateutil.parser
@@ -16,10 +16,17 @@ from schneiderman.models import *
 
 PROJECT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
+
+def ensure_dir_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 @db_session
 def main(fileName, game_date):
+    ensure_dir_exists(os.path.join(PROJECT_DIR, 'data', 'games'))
     salary_df = pandas.read_csv(fileName)
-    latest_games_df = pandas.read_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'latest_games.csv'))
+    latest_games_df = pandas.read_csv(os.path.join(PROJECT_DIR, 'data', 'clean', 'latest_games.csv'))
     for i in salary_df.index:
         games = str(salary_df["GameInfo"][i]).replace('@', ' ').split()
         salary_df.loc[i, "Home"] = games[1] == salary_df.loc[i, "teamAbbrev"]
@@ -41,7 +48,7 @@ def main(fileName, game_date):
     joined_df['days_rest_2'] = ((joined_df.days_rest > 1) & (joined_df.days_rest <= 2)) * 1
     joined_df['days_rest_3+'] = (2 < joined_df.days_rest) * 1
 
-    joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'days_rest', 'game_date', 'dfs'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'cleaned', 'todays_games.csv'),
+    joined_df.drop(['AvgPointsPerGame', 'Home', 'Opponent', 'playerId', 'player_dkname', 'date', 'days_rest', 'game_date', 'dfs'], 1).to_csv(os.path.join(PROJECT_DIR, 'data', 'games', 'todays_games.csv'),
                    header=False, index=False)
 
 if __name__ == '__main__':

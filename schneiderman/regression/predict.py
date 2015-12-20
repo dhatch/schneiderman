@@ -1,4 +1,5 @@
 import csv
+from itertools import izip
 
 import numpy as np
 
@@ -13,8 +14,9 @@ class NPCsvPredictor(object):
                  prediction_file_output_path):
         """Initialize the predictor with its input and output locations.
 
-        :param str prediction_path: The prediction csv containing data points.
-        :param str output_path: Path to write prediction data.
+        :param str model_file_path: Location of the model input file.
+        :param str salary_file_path: Location of the salary input file.
+        :param str prediction_file_output_path: Location to output predictions.
         """
         self.model_file_path = model_file_path
         self.salary_file_path = salary_file_path
@@ -23,15 +25,13 @@ class NPCsvPredictor(object):
     def predict_all(self):
         models = {}
         with open(self.model_file_path, 'r') as model_file:
-            positions = {1: 'PG', 2: 'SG', 3: 'SF', 4: 'PF', 5: 'C'}
+            positions = ['PG', 'SG', 'SF', 'PF', 'C']
             reader = csv.reader(model_file)
-            for (i, line) in enumerate(reader):
-                print i
-                a = np.zeros(len(line) - 1)
-                for (ii, item) in a:
+            for (position, line) in izip(positions, reader):
+                a = np.zeros(len(line))
+                for (ii, item) in enumerate(line):
                     a[ii] = float(item)
-                models[positions[i]] = a
-                i += 1
+                models[position] = a
 
         X = None
         with open(self.salary_file_path, 'r') as salary_file:
@@ -51,8 +51,8 @@ class NPCsvPredictor(object):
 
         preds = {}
         print X
-        for position in positions.itervalues():
-            preds[position] = X.dot(models[positions])
+        for position in positions:
+            preds[position] = X.dot(models[position])
 
         with open(self.prediction_file_output_path, 'w') as prediction_file:
             prediction_file_writer = csv.writer(prediction_file)

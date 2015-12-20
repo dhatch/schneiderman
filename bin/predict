@@ -9,7 +9,7 @@ from docopt import docopt
 
 from schneiderman.regression import predict
 
-PROJECT_DIR = PROJECT_DIR = os.path.abspath(os.path.join(
+PROJECT_DIR = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     '..'))
 
@@ -18,7 +18,13 @@ GAMES_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'games')
 PREDICT_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'predict')
 
 
+def ensure_dir_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def main():
+    ensure_dir_exists(PREDICT_DATA_DIR)
     predictor = predict.NPCsvPredictor(
         os.path.join(TRAIN_DATA_DIR, 'models.csv'),
         os.path.join(GAMES_DATA_DIR, 'todays_games.csv'),

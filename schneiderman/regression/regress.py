@@ -1,64 +1,64 @@
-#!/usr/bin/env python
+import os
+import csv
+from itertools import imap, izip
 
-#TODO: NORMALIZE, UNNORMALIZE
-
-#read csv file
 import numpy as np
 from sklearn.linear_model.coordinate_descent import ElasticNetCV
 
-positions = {1:'PG.csv', 2:'SG.csv', 3:'SF.csv', 4:'PF.csv', 5:'C.csv'}
-#open csv
-b = open('models', 'w')
-for pos in range(1, 6):
-    filename = positions[pos]
-    a = open('../data/cleaned/'+filename, 'r')
-    #read in csv into lines
-    lines = []
-    counter = 0
-    for line in a:
-        print counter
-        counter += 1
-        line = line.split(',')
-        if len(line) < 2:
-            continue
-        for i in range(0, len(line) - 1):
-            line[i] = line[i].strip()
-            line[i] = float(line[i])
-        lines.append(line)
 
-    #conver lines to numpy array
-    num_data = len(lines)
-    num_features = len(lines[0]) - 2
+class ElasticNetModel(object):
+    """Train an elastic net model on the data."""
 
-    X = np.zeros((num_data,num_features))
-    Y = np.zeros((num_data))
+    def __init__(self, cleaned_data_directory_path, models_file_path,
+                 residual_data_path):
+        """Initialize the ElasticNetModel.
 
-    for i in range(num_data):
-        for ii in range(num_features):
-            X[i][ii] = lines[i][ii]
-        Y[i] = lines[i][-2] #last one is name
+        :param str cleaned_data_directory_path: The location of cleaned data
+                                                files.
+        :param str models_file_path: The output location of the models file.
+        :param str residual_data_path: The output location for residual data.
+        """
+        self.cleaned_data_directory_path = cleaned_data_directory_path
+        self.models_file_path = models_file_path
+        self.residual_data_path = residual_data_path
 
-    
-    #create an instance of elasticnet
-    net = ElasticNetCV(alphas=[0.01, 0.05, 0.1], eps=2e-3,
-                       l1_ratio=[0.5, 0.7, 1], cv=3, normalize=True)
-    
-    #create a model based on our data
-    fit = net.fit(X, Y)
-    for i in net.coef_:
-        b.write(str(i) + ",")
-    b.write('\n')
+    def train_all(self):
+        positions = ['PG.csv', 'SG.csv', 'SF.csv', 'PF.csv', 'C.csv']
+        with open(self.models_file_path, 'w') as model_file:
+            model_file_writer = csv.writer(model_file)
+            for filename in positions:
+                with open(os.path.join(self.cleaned_data_directory_path, filename),
+                          'r') as cleaned_data:
+                    cleaned_data_reader = csv.reader(cleaned_data)
+                    lines = [map(float, line[:-1]) + line[-1:] for line in cleaned_data_reader
+                             if len(line) >= 2]
 
-    #get the residuals
-    resid = X.dot(net.coef_) - Y
-    c = open("resid"+filename,'w')
-    for i in range(len(resid)):
-        c.write(lines[i][-1].strip()+","+str(resid[i])+'\n')
-    
-    print sum(resid)
-        
+                # conver lines to numpy array
+                num_data = len(lines)
+                num_features = len(lines[0]) - 2
 
+                X = np.zeros((num_data, num_features))
+                Y = np.zeros((num_data))
 
+                for (i, data) in enumerate(lines):
+                    for (ii, feature) in enumerate(data[:-2]):
+                        X[i][ii] = feature
+                    Y[i] = lines[i][-2]  # last one is name
 
+                # create an instance of elasticnet
+                net = ElasticNetCV(alphas=[0.01, 0.05, 0.1], eps=2e-3,
+                                   l1_ratio=[0.5, 0.7, 1], cv=3, normalize=True)
 
-    
+                # create a model based on our data
+                net.fit(X, Y)
+                model_file_writer.writerow(net.coef_)
+
+                with open(os.path.join(
+                        self.residual_data_path,
+                        '_'.join(('resid', filename))), 'w') as resid_file:
+                    resid_file_writer = csv.writer(resid_file)
+                    # get the residuals
+                    resid = X.dot(net.coef_) - Y
+                    for (name, row) in izip(imap(lambda l: l[-1], lines), resid):
+                        resid_file_writer.writerow((name, row))
+                    print sum(resid)
