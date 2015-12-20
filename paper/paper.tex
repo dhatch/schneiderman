@@ -94,15 +94,19 @@ Daily Fantasy Sports, or DFS, is a new type of sports betting which has recently
 
 \section{Problem Statement} 
 \label{ps}
-blah blah double up, high expected value low variance blah blah
+Our goal is to create a program that creates lineups will win the most money on DraftKings as possible. The way we attempt to do this is by creating lineups with the highest expected values and the lowest variance. We use this strategy of high expected values with low variance is because we are designing our algorithm to work best in the "Double Up contests" that DraftKings puts on. In these contests, there is some entry fee and the top 45\% of lineups by points scored double their entry fee. While the expected value of these contests is just .9 assuming that we enter an average lineup. However, by creating lineups with with the highest expected points, we can hopefully raise our expected value over the break even point of 1. Low variance is best for this type of contest because very high values are not better than just moderately high values. High expected value is also good for this type of contest because the top 45\% of lineups by points. 
+
 
 \section{Getting the Data} 
 \label{da}
-yo
+DAVE PUT IN WHICH FILES DO THIS PART 
+To gather the data, we downloaded game logs for every current NBA player using the NBA.com API. Scraping the NBA API leads to JSON files which are then combed for the relevant information. This data was then fed into a data base that had three types of data models. The first of these is a Player Class. Objects in the player class have a unique id, which is used to index the data base. They also contain information about the player's Name on NBA.com and Draftings.com so that we can access information on either site, the player's team, and the set of games that the player has played in this season. One of the other classes in the data base is the Team Class. The team class contains fields for the team's name, NBA.com abbreviation, and the Draftings abbreviation to enable looking up the team on both websites. It also contains information about the team's relative strength. The Player Game Class includes the information about a specific players stats on a specific game. These are the statistics that are used by DraftKings to calculate daily fantasy scores. The player game also includes fields for that player's data base entry and the opponents data base entry. These fields are very important of the cleaning step. 
 
 \section{Cleaning the Data} 
 \label{cl}
-hi
+DAVE PUT IN WHICH FILES DO THIS PART 
+After we have scraped the data into the data base, we produce a file that can be used to run the regression. The output of this step is a csv file that on each line contains a single player game. The row is made up of the predictor variables and the daily fantasy points that the player scored on that day. Some of the predictor variables are running averages for previous 1,5 and 10 games of all the statistics that are used to calculate daily fantasy points. We also added categorical variables for the opponent because who the player is playing can have large effects on the statistics of the player in that game. Additional predictor variables are if the game is home or not and the number of days since the last game. All of the regression models are run on individual positions so this step also separates the players into their respective positions. It is split up into the respective positions because DraftKings requires that lineups generated have a specific number of each position. Therefore, players are compared more to their own positions than to players of other positions. Finally, this step deletes all the games for which players did not appear because it wouldn't make sense to try to predict the players scores in those games. 
+
 
 \section{Leaning the models} 
 \label{mo}
@@ -198,7 +202,5 @@ The rationale behind the box shaking is that if a single player has a bad game, 
 
 \section{Taking it out for a spin!}
 \label{ga}
-hi
+To run an initial test of the efficacy of our program, we entered the three lineups with the highest expected values into DraftKings contests. These lineups had a large amount of overlap because our model likes specific players but the lineups also had significant differences as well. 
  \end{document}
-
-
