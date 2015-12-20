@@ -89,7 +89,7 @@
 \\[1.4\baselineskip] 
 \section{Introduction} 
 \label{in}
-
+ 
 Daily Fantasy Sports, or DFS, is a new type of sports betting which has recently come into vogue.  Because there is some element of skill, prosecutors have been unable to shut it down in the majority of the country.  In this paper, we will detail an automated decision system that we have constructed, using various paradigms of decision making, to play Daily Fantasy sports.  Section \ref{ps} gives a detailed explanation of the fantasy sports problem along with a mathematical problem statement.  Section \ref{da} breaks down our various data sources and methods for scraping them.  It also explains the database we use to hold the data.  Section \ref{cl} contains our methodology for cleaning the data into the final features we base the model on.  Section \ref{mo} explains how are linear regression algorithm of choice works, and gives a human-friendly explanation of the model. In section \ref{li} we talk about how we generate our lineups using our projections.  Finally, in section \ref{ga} we put our money where our mouths are and bet on our lineups.  
 
 \section{Problem Statement} 
@@ -141,12 +141,61 @@ Our lineup generator will read in these files and use them to generate lineups w
 
 \section{Generating the lineups} 
 \label{li}
-Now that we have the projections, we need to generate some lineups to submit that we hope will make money!  
+The code referenced in this section is found in the lineup folder, in set\_lineups.py 
 
-A formalization of this problem is as follows: \\
-Given a list P of players, we would like to generate lineups L s.t. the sum of the expected values of the players of L is maximized under the constraint that the the sum of the salaries of the players of L do not exceed a maximum salary.  
+Now that we have the projections, we need to generate some lineups to submit that we hope will make money!  A formalization of this problem is as follows: \\
+
+Given a list P of players, we would like to generate a set of lineups L s.t. given a lineup $L_i$ in L, the sum of the expected values of the players of $L_i$ is close to maximized under the constraint that the the sum of the salaries of the players of $L_i$ do not exceed a maximum salary.  \\
  
-Any computer scientist will see this as a variation of the knapsack problem, which is a classic NP-hard problem.  However, we have several 
+Any computer scientist will see this as a variation of the weighted knapsack problem, which is a classic NP-hard problem.  However, our problem has several constraints which make it easier to solve, along with some other twists.\\
+
+1)We are only interested in solving this problem for a budget of \$50,000, because that's what every contest on DraftKings(a popular DFS website) uses.  \\
+2)Player salaries are all contained within the range from \$3000 to \$11000.  \\
+3)Players have variances along with their expected scores (we are using a gaussian model).  Because we are specifically interested in double-up games, our ideal lineup is one which is high expected value and low variance, because it maximizes the chance of getting into the money.  \\
+4)Because players can be used across many lineups, we must make sure that our set of lineups L does not depend too heavily on the performance of a small number of players.  Otherwise, if those players had a bad game our bankroll would be entirely wiped out.  \\
+5)It's not entirely clear what the threshold for finishing in the money is - this varies quite a bit between days depending on how many players which are used in other people's lineups have good days.  \\
+
+The algorithm we came up with has three separate stages which address these issues.
+
+\subsection{Thresholding}
+The code that does the process described in this subsection is located at the beginning of the main() submodule in set\_lineup.py. 
+
+Before we begin generating lineups, we need to figure out our threshold for expected value for the lineups (we will reject lineups whose expected value is below this).  We decide to do this by generating lineups using our lineup generator (discussed in the next section, section \ref{ge}) and taking the minimum expected value of lineups in the top X\%.  \\
+
+X was tuned using past data by selecting an X such that on average, our threshold was above the money.  Note that we can't just lower X to arbitrarily low numbers, because then we may be unable to find lineups and they will heavily depend on the same players.  Furthermore, by getting some breathing room with a slightly higher X, we are able to focus more on variance, increasing the chances that our lineups make money.  We will call this threshold T.  \\
+
+\subsection{Lineup Generator}
+\label{ge}
+The code described in this subsection is in the get\_lineup() submodule in set\_lineup.py 
+
+Given this threshold T, we want to write a submodule which can generate a single lineup with an expected value above T but with a budget under our salary cap.  We use a greedy randomized algorithm:\\
+
+1)Randomize the order of the positions to be picked out of PG, SG, SF, PF, C, G, F, UTIL.  This will allow us to get a healthy selection of players.  \\
+2)For each position, randomly select a player, where each player has $\frac{expected value}{salary}$ chance of being chosen, making sure we have enough money left to fill out our roster.  Then adjust the remaining salary.\\
+3)After having chosen a player for each position, we will have some amount of money left over.  Re-randomize the positions.\\
+4)For each position, pick a random player according to the same probability distribution.  If that player has higher expected value and fits our salary constraints, replace the current player for that position with him and adjust the salary accordingly.  \\
+5)Repeat steps 3-4 until there are no more possible improvements.\\
+
+Through experimentation, we found that this typically generates a lineup that uses almost all of the salary and has close to maximum expected-value/salary ratio, meaning that we have succeeded in generating lineups with expected value above T. Note that this algorithm works well because of the small range in salaries (constraints 1 and 2 in our list).  
+
+\subsection{List of Lineups generator}
+\label{lge}
+\emph{The code which contains the algorithm described in this section is in the main() submodule in set\_lineup.py} \\
+
+Now that we have a tool for generating a single lineup, we would like to be able to generate a list of lineups. However, as mentioned in our list of constraints, we want to make sure the list is not too dependent on certain players.  We invented a novel algorithm to solve this problem, which we call the box algorithm (it is a flavor of Monte Carlo):\\
+
+1) Fill a box with n lineups, where n is the number of lineups you would like to generate.  \\
+2) Shake the box k times, where a box shake is defined as follows: \\
+a) For each player, assign the player a score by sampling a number from a normal distribution centered at his expected value with standard deviation equal to his past standard deviation.  
+b) For each lineup in the box, add the scores of the players. Compute the median score.
+c) For each lineup in the box below the median score, flip a coin.  If it's heads, remove the lineup from the box.  
+d) For each lineup that was removed from the box, add a new lineup from get\_lineup into the box.
+e) If a lineup has survived for 10 box shakes, but was not in the initial box lineup, save it.
+
+After k shakes, all the saved lineups are those that we would submit.  We order these in the probability that the lineup will score below T using the normal distribution formula, where both the expected value and variance of the lineup is simply the sum of those values of its players (this is a well known fact for normal variables).  
+
+The rationale behind the box shaking is that if a single player has a bad game, many of the lineups depending on it will be removed from the box, which will remove dependencies on certain players.  
+
 \section{Taking it out for a spin!}
 \label{ga}
 hi
