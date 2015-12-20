@@ -19,6 +19,8 @@ for pos in range(1, 6):
         print counter
         counter += 1
         line = line.split(',')
+        if len(line) < 2:
+            continue
         for i in range(0, len(line) - 1):
             line[i] = line[i].strip()
             line[i] = float(line[i])

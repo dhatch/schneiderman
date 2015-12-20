@@ -78,22 +78,20 @@ def get_median(lst):
 #which is a dictinoary with key position type and value player class (which is what the database returns)
 def get_lineup(players): #players is dict of key position (so like "PG") and value list of players
     #website specific stats
-    min_salary = 3000
+    min_salary = 4000
 
     #dictionary mapping numbers to positions
     position_order = {1:'PG', 2:'SG', 3:'SF', 4:'PF', 5: 'C', 6:'G', 7:'F', 8:'UTIL'}
     
     #make iterables of (player, prob_to_be_chosen)
     distributions = {} #key position value iterable
-
     for i in range(1, 9):
         dist = []
         for p in players[position_order[i]]:
-            #dist.append((p, 1.0*p.e_v/p.salary)) #TODO try squared 
-            dist.append((p, (1.0*p.e_v/p.salary)**2)) 
+            dist.append((p, 1.0*p.e_v/p.salary)) 
+            #dist.append((p, (1.0*p.e_v/p.salary)**2)) 
         distributions[position_order[i]] = dist
         #to get one, use weighted_choice(distributions["PG"]), etc.
-
     #roster we are constructing, key position, value name THIS IS NOT RETURNED
     roster = {}
     #lineup we are constructing.  key position, value instance of player class THIS IS RETURNED
@@ -107,8 +105,7 @@ def get_lineup(players): #players is dict of key position (so like "PG") and val
     for i in shuffled:
         #get a player p of position position_order[i] whose salary is small enough and isn't on our roster
         chosen = weighted_choice(distributions[position_order[i]])
-        while (chosen.salary > salary - min_salary*players_left or chosen.name in roster.values()):
-            #pick a new one
+        while (chosen.salary >= salary - min_salary*players_left or chosen.name in roster.values()):
             chosen = weighted_choice(distributions[position_order[i]])
         #subtract his salary from salary
         salary -= chosen.salary
@@ -169,13 +166,12 @@ def main():
         for line in a:
             line = line.split(',')
             if line[0] not in variance_dict.keys():
-                variance_dict[line[0]] = [float(line[1])**2, 1] #[ssr, n_games]
+                variance_dict[line[0]] = [float(line[1])**2, 1.0] #[ssr, n_games]
             else:
-                print variance_dict[line[0]][0]
                 variance_dict[line[0]][0] += float(line[1])**2
-                variance_dict[line[0]][1] += 1
+                variance_dict[line[0]][1] += 1.0
         for p in variance_dict.keys():
-            pvar = math.sqrt(variance_dict[p][0]/variance_dict[p][0])
+            pvar = math.sqrt(variance_dict[p][0]/variance_dict[p][1])
             set_var(players, pvar, p)
 
     #generate a bunch of lineups
@@ -199,7 +195,6 @@ def main():
     threshold = min(nlargest(thresh_num, tuning)) 
 
     print "TUNED"
-
     #make a box of lineups
     for i in range(0, num_lineups):
         print i
@@ -218,11 +213,13 @@ def main():
         for i in range(1,9):
             for p in players[position_order[i]]:
                 scores[p.name] = numpy.random.normal(p.e_v, p.var)
+                """
                 print p.name
                 normal = "normal: " + str(p.e_v)
                 real = "actual: " + str(scores[p.name])
                 print normal
                 print real
+                """
                 #scores[p.name] = p.e_v
         lineup_scores = []
         for lineup in lineups:

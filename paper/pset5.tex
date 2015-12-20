@@ -1,0 +1,155 @@
+% ***********************************************************
+% ******************* PHYSICS HEADER ************************
+% ***********************************************************
+% Version 2
+\documentclass[12pt]{article}
+\usepackage{listings}
+\usepackage{amsmath} % AMS Math Package
+\usepackage{amsthm} % Theorem Formatting
+\usepackage{amssymb}    % Math symbols such as \mathbb
+\usepackage{graphicx} % Allows for eps images
+\usepackage[dvips,letterpaper,margin=1in,bottom=0.7in]{geometry}
+\usepackage{tensor}
+ % Sets margins and page size
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{wc369}
+\renewcommand{\labelenumi}{(\alph{enumi})} % Use letters for enumerate
+% \DeclareMathOperator{\Sample}{Sample}
+\let\vaccent=\v % rename builtin command \v{} to \vaccent{}
+\usepackage{enumerate}
+\renewcommand{\v}[1]{\ensuremath{\mathbf{#1}}} % for vectors
+\newcommand{\gv}[1]{\ensuremath{\mbox{\boldmath$ #1 $}}} 
+% for vectors of Greek letters
+\newcommand{\uv}[1]{\ensuremath{\mathbf{\hat{#1}}}} % for unit vector
+\newcommand{\abs}[1]{\left| #1 \right|} % for absolute value
+\newcommand{\avg}[1]{\left< #1 \right>} % for average
+\let\underdot=\d % rename builtin command \d{} to \underdot{}
+\renewcommand{\d}[2]{\frac{d #1}{d #2}} % for derivatives
+\newcommand{\dd}[2]{\frac{d^2 #1}{d #2^2}} % for double derivatives
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}} 
+% for partial derivatives
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}} 
+% for double partial derivatives
+\newcommand{\pdc}[3]{\left( \frac{\partial #1}{\partial #2}
+ \right)_{#3}} % for thermodynamic partial derivatives
+\newcommand{\ket}[1]{\left| #1 \right>} % for Dirac bras
+\newcommand{\bra}[1]{\left< #1 \right|} % for Dirac kets
+\newcommand{\braket}[2]{\left< #1 \vphantom{#2} \right|
+ \left. #2 \vphantom{#1} \right>} % for Dirac brackets
+\newcommand{\matrixel}[3]{\left< #1 \vphantom{#2#3} \right|
+ #2 \left| #3 \vphantom{#1#2} \right>} % for Dirac matrix elements
+\newcommand{\grad}[1]{\gv{\nabla} #1} % for gradient
+\let\divsymb=\div % rename builtin command \div to \divsymb
+\renewcommand{\div}[1]{\gv{\nabla} \cdot \v{#1}} % for divergence
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\curl}[1]{\gv{\nabla} \times \v{#1}} % for curl
+\let\baraccent=\= % rename builtin command \= to \baraccent
+\renewcommand{\=}[1]{\stackrel{#1}{=}} % for putting numbers above =
+\providecommand{\wave}[1]{\v{\tilde{#1}}}
+\providecommand{\fr}{\frac}
+\providecommand{\RR}{\mathbb{R}}
+\providecommand{\NN}{\mathbb{N}}
+\providecommand{\seq}{\subseteq}
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\providecommand{\e}{\epsilon}
+\newtheorem{prop}{Proposition}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{axiom}{Axiom}[section]
+\newtheorem{p}{Problem}[section]
+\usepackage{cancel}
+\usepackage[font={small,it}]{caption}
+\newtheorem*{lem}{Lemma}
+\theoremstyle{definition}
+\newtheorem*{dfn}{Definition}
+ \newenvironment{s}{%\small%
+        \begin{trivlist} \item \textbf{Solution}. }{%
+            \hspace*{\fill} $\blacksquare$\end{trivlist}}%
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4
+		\end{array}
+	\right.
+}
+\setlength\parindent{0pt}	
+% ***********************************************************
+% ********************** END HEADER *************************
+% ***********************************************************
+
+\begin{document}
+
+{\noindent\Huge\bf  \\[0.5\baselineskip] {\fontfamily{cmr}\selectfont Daily Fantasy Basketball Picker}         }\\[2\baselineskip] % Title
+{ {\bf \fontfamily{cmr}\selectfont Automated Decision Systems}\\ {\textit{\fontfamily{cmr}\selectfont     Dec 20 2015}}}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
+{\large \textsc{ \\William Cai, David Hatch, Evan Green}} % Author name
+\\[1.4\baselineskip] 
+\section{Introduction} 
+\label{in}
+
+Daily Fantasy Sports, or DFS, is a new type of sports betting which has recently come into vogue.  Because there is some element of skill, prosecutors have been unable to shut it down in the majority of the country.  In this paper, we will detail an automated decision system that we have constructed, using various paradigms of decision making, to play Daily Fantasy sports.  Section \ref{ps} gives a detailed explanation of the fantasy sports problem along with a mathematical problem statement.  Section \ref{da} breaks down our various data sources and methods for scraping them.  It also explains the database we use to hold the data.  Section \ref{cl} contains our methodology for cleaning the data into the final features we base the model on.  Section \ref{mo} explains how are linear regression algorithm of choice works, and gives a human-friendly explanation of the model. In section \ref{li} we talk about how we generate our lineups using our projections.  Finally, in section \ref{ga} we put our money where our mouths are and bet on our lineups.  
+
+\section{Problem Statement} 
+\label{ps}
+blah blah double up, high expected value low variance blah blah
+
+\section{Getting the Data} 
+\label{da}
+yo
+
+\section{Cleaning the Data} 
+\label{cl}
+hi
+
+\section{Leaning the models} 
+\label{mo}
+The code related to this section is in the regression folder in the regress.py and predict.py files.  \\
+
+Our linear regression algorithm of choice was the elastic net, a form of regularized linear regression.  It was important to choose from the family of regularized linear regression because we have a pretty small ratio of data points to features, and we wanted the ability to add as many features as we wanted.  Doing linear regression on a dataset with comparable amounts of features to data points quickly becomes an exercise in creating ridiculous models because of the danger of overfitting.  Regularization combats this trend by adding in a term based on the coefficients of the model to the loss function of linear regression, which is simply the residual sum of squares.  \\
+
+There are several regression methods in the regularized linear regression family.  The most popular of these are the LASSO, ridge regression, and elastic net.  Our choice, elastic net, is an interpolation between the other two and has several properties which lend themselves to our project.  For one, given a group of correlated variables, of which we have many, the elastic net will give all of them a coefficient.  This is in contrast to the LASSO, which will arbitrarily select one and give it a coefficient and set the rest to 0.  Using the elastic net allows us to better understand our program's explanation of it's decisions.  The advantage that the elastic net has over ridge regression is that it will zero out some variables, which will allow us to say which of our features give no signal - another useful way for us to understand which features are important in predicting fantasy scores.  On the other hand, ridge regression will almost never set a coefficient to zero, making interpretation more difficult.  
+\begin{figure}
+$$\beta_{elastic net}  = \argmin\limits_\beta (||y - X \beta ||^2 + \lambda_2||\beta||^2 + \lambda_1||\beta||_1)$$
+$$\beta_{LASSO}  = \argmin\limits_\beta (\frac{1}{N}||y - X \beta ||_2^2 + \lambda||\beta||_1)$$
+$$\beta_{ridge}  = \argmin\limits_\beta (||y - X \beta ||^2 + \lambda||\beta||^2 )$$
+\caption{The cost functions of various regression methods in the regularized linear regression family.  Note how elastic net contains the terms from both the LASSO and ridge regression.}
+
+\end{figure}\\
+
+
+In our code, we read in each player-game for each position from a csv file which was produced from our data cleaning.  Each line of the csv is of form\\
+$x_1, x_2, ..., x_n, y, $player-name
+We then load that into numpy matrices X and Y, where X is $num_{player-games} $by n and Y is $num_{player-games}$ by 1, and use numpy's elastic net, ElasticNetCV, to find a linear model $\beta$ which solves 
+$$\beta  = \argmin\limits_\beta (||y - X \beta ||^2 + \lambda_2||\beta||^2 + \lambda_1||\beta||_1)$$
+
+The $\lambda$s are learned through three-fold cross validation, which splits the data into thirds and learns it on two thirds at a time, using the last third for validation.  The elastic nets are made for a variety of $\lambda$s, and the $\lambda$s which have the lowest error are used.  Furthermore, note that all features are regularized before using the elastic net to allow for the coefficients to be penalized equally.  Mathematically, this means that for each feature $x_i$ we subtract the mean of the $x_i$ such that $$\sum\limits_{j=1}^n x_j(i) = 0$$ Where $x_j(i)$ denotes the ith feature of the jth player-game.  We then divide each $x_j(i)$ by the standard deviation of the $x_i$s.  
+
+The result of this is a linear model for each position, which predicts how many daily fantasy points.  The models, along with an interpretation, are given in files TODO TODO.  They are not included here because there are over 100 features so it would take the majority of the paper.  
+
+Given these models, we can generate the expected value of fantasy points for each player by plugging their scraped data into the model.  We can further generate their variance by going through their projections for previous games and seeing how much they deviate from the model.  This allows us to generate our expectedvalues and residPOSITION csv files.  Each row of expectedvalues is of form \\
+
+Name, position, expected daily fantasy points, salary\\
+
+and each row of residPOSITION is of form \\
+
+Name, standard deviation \\
+
+Our lineup generator will read in these files and use them to generate lineups with high expected value and low variance.
+
+\section{Generating the lineups} 
+\label{li}
+Now that we have the projections, we need to generate some lineups to submit that we hope will make money!  
+
+A formalization of this problem is as follows: \\
+Given a list P of players, we would like to generate lineups L s.t. the sum of the expected values of the players of L is maximized under the constraint that the the sum of the salaries of the players of L do not exceed a maximum salary.  
+ 
+Any computer scientist will see this as a variation of the knapsack problem, which is a classic NP-hard problem.  However, we have several 
+\section{Taking it out for a spin!}
+\label{ga}
+hi
+ \end{document}
+
+

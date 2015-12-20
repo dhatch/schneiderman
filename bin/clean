@@ -104,7 +104,7 @@ def main():
                 if count(player.games) <= 1:
                     continue
                 player_df = df_for_player(player)
-                player_df.drop(['playerId', 'date', 'days_rest'], 1).to_csv(pos_file, header=False, index=False)
+                player_df.drop(['playerId', 'date', 'days_rest'], 1).to_csv(pos_file, header=first, index=False)
                 try:
                     if first:
                         latest_games.writerow(list(player_df.columns))
