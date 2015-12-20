@@ -1,79 +1,63 @@
-#!/usr/bin/env python
+import csv
+
 import numpy as np
 
-#open models
-model_file = open('models','r')
-positions = {1:'PG', 2:'SG', 3:'SF', 4:'PF', 5:'C'}
-models = {}
-i = 1
-for line in model_file:
-    print i
-    line = line.strip()
-    line = line.split(',')
-    a = np.zeros(len(line) - 1)
-    for ii in range(len(line) - 1):
-        a[ii] = float(line[ii])
-    models[positions[i]] = a
-    i += 1
 
-#read in today's games csv into lines
-a = open('../data/cleaned/todays_games.csv', 'r')
-#format is
-#position, name, salary, x1,x2,..
-name_indices = {} #key index, value names
-lines = []
-for line in a:
-    line = line.split(',')
-    for i in range(len(line)):
-        line[i] = line[i].strip()
-        if(i>1):
-            line[i] = float(line[i])
-    lines.append(line)
-                      
-#conver lines to numpy array
-num_data = len(lines)
-num_features = len(lines[0]) - 3
-                               
-X = np.zeros((num_data,num_features))
-                        
-for i in range(num_data):
-    for ii in range(num_features):
-        X[i][ii] = lines[i][ii + 3]
+class NPCsvPredictor(object):
+    """Produce predictions for data contained in a csv file.
 
-#maybe we have to normalize?
-"""
-means = {}
-stds = {}
-for i in range(0, num_features):
-    means[i] = np.mean(X[:][i])
-    stds[i] = np.std(X[:][i])
-    X[:][i] -= mean[i]
-    X[:][i] /= std[i]
-"""
+    The data is output from the regress operation.
+    """
 
+    def __init__(self, model_file_path, salary_file_path,
+                 prediction_file_output_path):
+        """Initialize the predictor with its input and output locations.
 
-"""
-diffs = {} #key playername, value [diff1, diff2, ...]
-variances = {} #key playersname, value variance
-#for each game
+        :param str prediction_path: The prediction csv containing data points.
+        :param str output_path: Path to write prediction data.
+        """
+        self.model_file_path = model_file_path
+        self.salary_file_path = salary_file_path
+        self.prediction_file_output_path = prediction_file_output_path
 
-#predict a score with our model
-for p in diffs.keys:
-    rss = 0
-    for i in range(0, len(diffs[p])):
-        rss += diffs[p][i]**2
-    variances[p] = rss/len(diffs[p])
-"""
+    def predict_all(self):
+        models = {}
+        with open(self.model_file_path, 'r') as model_file:
+            positions = {1: 'PG', 2: 'SG', 3: 'SF', 4: 'PF', 5: 'C'}
+            reader = csv.reader(model_file)
+            for (i, line) in enumerate(reader):
+                print i
+                a = np.zeros(len(line) - 1)
+                for (ii, item) in a:
+                    a[ii] = float(item)
+                models[positions[i]] = a
+                i += 1
 
-preds = {}
-print X
-for i in range(1,6):
-    preds[positions[i]] = X.dot(models[positions[i]])
+        X = None
+        with open(self.salary_file_path, 'r') as salary_file:
+            # format is
+            # position, name, salary, x1,x2,..
+            salary_reader = csv.reader(salary_file)
+            lines = [line[:2] + map(float, line[2:]) for line in salary_reader]
 
-b = open('expectedvals', 'w')
-for i in range(num_data):
-    b.write(lines[i][1]+','+lines[i][0]+',')
-    b.write(str(preds[lines[i][0]][i])+',')
-    b.write('0'+',')
-    b.write(str(lines[i][2])+'\n')
-#a,PG,40.0,20,4,10000 
+            # conver lines to numpy array
+            num_data = len(lines)
+            num_features = len(lines[0]) - 3
+            X = np.zeros((num_data, num_features))
+
+            for (i, row) in enumerate(lines):
+                for (ii, feature) in enumerate(row[3:]):
+                    X[i][ii] = feature
+
+        preds = {}
+        print X
+        for position in positions.itervalues():
+            preds[position] = X.dot(models[positions])
+
+        with open(self.prediction_file_output_path, 'w') as prediction_file:
+            prediction_file_writer = csv.writer(prediction_file)
+            for i in range(num_data):
+                # a,PG,40.0,20,4,10000
+                prediction_file_writer.writerow(
+                    [lines[i][1], lines[i][0], preds[lines[i][0]][i], 0,
+                     lines[i][2]])
