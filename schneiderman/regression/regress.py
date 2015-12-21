@@ -1,6 +1,6 @@
 import os
 import csv
-from itertools import imap, izip
+from itertools import imap, izip, chain, repeat
 
 import numpy as np
 from sklearn.linear_model.coordinate_descent import ElasticNetCV
@@ -26,10 +26,11 @@ class ElasticNetModel(object):
         positions = ['PG.csv', 'SG.csv', 'SF.csv', 'PF.csv', 'C.csv']
         with open(self.models_file_path, 'w') as model_file:
             model_file_writer = csv.writer(model_file)
-            for filename in positions:
+            for (first, filename) in izip(chain((True,), repeat(False)), positions):
                 with open(os.path.join(self.cleaned_data_directory_path, filename),
                           'r') as cleaned_data:
                     cleaned_data_reader = csv.reader(cleaned_data)
+                    cleaned_data_headers = cleaned_data_reader.next()
                     lines = [map(float, line[:-1]) + line[-1:] for line in cleaned_data_reader
                              if len(line) >= 2]
 
@@ -51,6 +52,8 @@ class ElasticNetModel(object):
 
                 # create a model based on our data
                 net.fit(X, Y)
+                if first:
+                    model_file_writer.writerow(cleaned_data_headers[:-2])
                 model_file_writer.writerow(net.coef_)
 
                 with open(os.path.join(

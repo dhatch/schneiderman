@@ -27,6 +27,7 @@ class NPCsvPredictor(object):
         with open(self.model_file_path, 'r') as model_file:
             positions = ['PG', 'SG', 'SF', 'PF', 'C']
             reader = csv.reader(model_file)
+            reader.next()
             for (position, line) in izip(positions, reader):
                 a = np.zeros(len(line))
                 for (ii, item) in enumerate(line):
