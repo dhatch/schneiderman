@@ -58,4 +58,8 @@ target/
 
 data/
 .DS_Store
+
+paper/*.pdf
+paper/*.aux
+paper/*.gz
 *~
