@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+"""Train the model based on cleaned data.
+
+Usage: train
+"""
+import os
+
+from docopt import docopt
+
+from schneiderman.regression import regress
+
+PROJECT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..'))
+
+CLEAN_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'clean')
+TRAIN_DATA_DIR = os.path.join(PROJECT_DIR, 'data', 'train')
+
+
+def ensure_dir_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def main():
+    ensure_dir_exists(TRAIN_DATA_DIR)
+    model = regress.ElasticNetModel(
+        CLEAN_DATA_DIR,
+        os.path.join(TRAIN_DATA_DIR, 'models.csv'),
+        TRAIN_DATA_DIR)
+    model.train_all()
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    main()

@@ -3,7 +3,7 @@
 
 Usage: clean
 """
-import os.path
+import os
 import csv
 
 from docopt import docopt
@@ -22,8 +22,12 @@ POSITIONS = [
     'PG'
 ]
 
+def ensure_dir_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 def output_file_for_position(position):
-    return os.path.join(PROJECT_DIR, 'data', 'cleaned', position + '.csv')
+    return os.path.join(PROJECT_DIR, 'data', 'clean', position + '.csv')
 
 @db_session
 def players_for_position(position):
@@ -95,6 +99,7 @@ def df_for_player(player):
 
 @db_session
 def main():
+    ensure_dir_exists(os.path.join(PROJECT_DIR, 'data', 'clean'))
     latest_games = csv.writer(open(output_file_for_position('latest_games'), 'w'))
     for position in POSITIONS:
         with open(output_file_for_position(position), 'w') as pos_file:
@@ -104,7 +109,7 @@ def main():
                 if count(player.games) <= 1:
                     continue
                 player_df = df_for_player(player)
-                player_df.drop(['playerId', 'date', 'days_rest'], 1).to_csv(pos_file, header=first, index=False)
+                player_df.drop(['playerId', 'date', 'days_rest'], 1).to_csv(pos_file, header=False, index=False)
                 try:
                     if first:
                         latest_games.writerow(list(player_df.columns))
