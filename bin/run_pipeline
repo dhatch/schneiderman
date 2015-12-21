@@ -9,13 +9,10 @@ fi
 
 set -e
 
-source $DIR/set_env
-cd $DIR
-
-./scrape
-./load_db
-./clean
-./train
-./todays_games $1 $2
-./predict
-./set_lineup
+$DIR/scrape
+$DIR/load_db
+$DIR/clean
+$DIR/train
+$DIR/todays_games $1 $2
+$DIR/predict
+$DIR/set_lineup

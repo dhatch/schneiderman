@@ -90,27 +90,28 @@
 \section{Introduction} 
 \label{in}
  
-Daily Fantasy Sports, or DFS, is a new type of sports betting which has recently come into vogue.  Because there is some element of skill, prosecutors have been unable to shut it down in the majority of the country.  In this paper, we will detail an automated decision system that we have constructed, using various paradigms of decision making, to play Daily Fantasy sports.  Section \ref{ps} gives a detailed explanation of the fantasy sports problem along with a mathematical problem statement.  Section \ref{da} breaks down our various data sources and methods for scraping them.  It also explains the database we use to hold the data.  Section \ref{cl} contains our methodology for cleaning the data into the final features we base the model on.  Section \ref{mo} explains how are linear regression algorithm of choice works, and gives a human-friendly explanation of the model. In section \ref{li} we talk about how we generate our lineups using our projections.  Finally, in section \ref{ga} we put our money where our mouths are and bet on our lineups.  
+Daily Fantasy Sports, or DFS, is a new type of sports betting which has recently come into vogue.  Because there is some element of skill, prosecutors have been unable to shut it down in the majority of the country.  In this paper, we will detail an automated decision system that we have constructed, using various paradigms of decision making, to play Daily Fantasy sports.  Section \ref{ps} gives a detailed explanation of the fantasy sports problem along with a mathematical problem statement.  Section \ref{da} breaks down our various data sources and methods for scraping them.  It also explains the database we use to hold the data.  Section \ref{cl} contains our methodology for cleaning the data into the final features we base the model on.  Section \ref{mo} explains how our linear regression algorithm of choice works, and gives a human-friendly explanation of the model. In section \ref{li} we talk about how we generate our lineups using our projections.   In section \ref{ga} we put our money where our mouths are and bet on our lineups.  Finally, in section \ref{in}, we explain how to run the program and what the requirements are. 
 
 \section{Problem Statement} 
 \label{ps}
-Our goal is to create a program that creates lineups will win the most money on DraftKings as possible. The way we attempt to do this is by creating lineups with the highest expected values and the lowest variance. We use this strategy of high expected values with low variance is because we are designing our algorithm to work best in the "Double Up contests" that DraftKings puts on. In these contests, there is some entry fee and the top 45\% of lineups by points scored double their entry fee. While the expected value of these contests is just .9 assuming that we enter an average lineup. However, by creating lineups with with the highest expected points, we can hopefully raise our expected value over the break even point of 1. Low variance is best for this type of contest because very high values are not better than just moderately high values. High expected value is also good for this type of contest because the top 45\% of lineups by points. 
-
+Our goal is to create a program that creates lineups will win the most money on DraftKings as possible. The way we attempt to do this is by creating lineups with the highest expected values and the lowest variance. We use this strategy of high expected values with low variance is because we are designing our algorithm to work best in the "Double Up contests" that DraftKings puts on. In these contests, there is some entry fee and the top 45\% of lineups by points scored double their entry fee. The expected value of these contests is just 90\% of the contest fee assuming that we enter an average lineup. However, by creating lineups with with the highest expected points, we can hopefully raise our expected value over the break even point of the entry fee. Low variance is best for this type of contest because very high values are not better than just moderately high values. High expected value is also good for this type of contest because the top 45\% of lineups by points. 
 
 \section{Getting the Data} 
 \label{da}
-DAVE PUT IN WHICH FILES DO THIS PART 
-To gather the data, we downloaded game logs for every current NBA player using the NBA.com API. Scraping the NBA API leads to JSON files which are then combed for the relevant information. This data was then fed into a data base that had three types of data models. The first of these is a Player Class. Objects in the player class have a unique id, which is used to index the data base. They also contain information about the player's Name on NBA.com and Draftings.com so that we can access information on either site, the player's team, and the set of games that the player has played in this season. One of the other classes in the data base is the Team Class. The team class contains fields for the team's name, NBA.com abbreviation, and the Draftings abbreviation to enable looking up the team on both websites. It also contains information about the team's relative strength. The Player Game Class includes the information about a specific players stats on a specific game. These are the statistics that are used by DraftKings to calculate daily fantasy scores. The player game also includes fields for that player's data base entry and the opponents data base entry. These fields are very important of the cleaning step. 
+\emph{The code referenced in this section is located in bin/scrape, bin/load\_db, schneiderman/scrape, and schneiderman/models}\\
+
+To gather the data, we downloaded game logs for every current NBA player using the NBA.com API. Scraping the NBA API leads to JSON files which are then combed for the relevant information. This data was then fed into a database that had three types of data models. The first of these is a Player class. Objects in the player class have a unique id, which is used to index the database. They also contain information about the player's name on NBA.com and DraftKings.com so that we can access information on either site, the player's team, and the set of games that the player has played in this season. One of the other classes in the database is the Team class. The team class contains fields for the team's name, NBA.com abbreviation, and the DraftKings abbreviation to enable looking up the team on both websites. It also contains information about the team's relative strength. The PlayerGame class includes the information about a specific players stats on a specific game. These are the statistics that are used by DraftKings to calculate daily fantasy scores. The PlayerGame also includes fields for that player's database entry and the opponents database entry. These fields are very important for the cleaning step. 
 
 \section{Cleaning the Data} 
 \label{cl}
-DAVE PUT IN WHICH FILES DO THIS PART 
-After we have scraped the data into the data base, we produce a file that can be used to run the regression. The output of this step is a csv file that on each line contains a single player game. The row is made up of the predictor variables and the daily fantasy points that the player scored on that day. Some of the predictor variables are running averages for previous 1,5 and 10 games of all the statistics that are used to calculate daily fantasy points. We also added categorical variables for the opponent because who the player is playing can have large effects on the statistics of the player in that game. Additional predictor variables are if the game is home or not and the number of days since the last game. All of the regression models are run on individual positions so this step also separates the players into their respective positions. It is split up into the respective positions because DraftKings requires that lineups generated have a specific number of each position. Therefore, players are compared more to their own positions than to players of other positions. Finally, this step deletes all the games for which players did not appear because it wouldn't make sense to try to predict the players scores in those games. 
+\emph{The code referenced in this section is located in bin/clean}\\
+
+After we have scraped the data into the database, we produce game log files that can be used to run the regression. The output of this step is multiple csv files that on each line contains a single player game. The row is made up of the predictor variables and the daily fantasy points that the player scored on that day. Some of the predictor variables are running averages for previous 1, 5 and 10 games of all the statistics that are used to calculate daily fantasy points. We also added categorical variables for the opponent because who the player is playing can have large effects on the statistics of the player in that game. Additional predictor variables are if the game is home or not and the number of days since the last game. All of the regression models are run on individual positions so this step also separates the players into their respective positions. It is split up into the respective positions because DraftKings requires that lineups generated have a specific number of each position. Therefore, players are compared more to their own positions than to players of other positions. Finally, this step deletes all the games for which players did not appear because it wouldn't make sense to try to predict the players scores in those games. 
 
 
-\section{Leaning the models} 
+\section{Learning the models} 
 \label{mo}
-The code related to this section is in the regression folder in the regress.py and predict.py files.  \\
+\emph{The code related to this section is in the regression folder in the schneiderman/regression/predict.py and schneiderman/regression/regress.py files } \\
 
 Our linear regression algorithm of choice was the elastic net, a form of regularized linear regression.  It was important to choose from the family of regularized linear regression because we have a pretty small ratio of data points to features, and we wanted the ability to add as many features as we wanted.  Doing linear regression on a dataset with comparable amounts of features to data points quickly becomes an exercise in creating ridiculous models because of the danger of overfitting.  Regularization combats this trend by adding in a term based on the coefficients of the model to the loss function of linear regression, which is simply the residual sum of squares.  \\
 
@@ -131,7 +132,7 @@ $$\beta  = \argmin\limits_\beta (||y - X \beta ||^2 + \lambda_2||\beta||^2 + \la
 
 The $\lambda$s are learned through three-fold cross validation, which splits the data into thirds and learns it on two thirds at a time, using the last third for validation.  The elastic nets are made for a variety of $\lambda$s, and the $\lambda$s which have the lowest error are used.  Furthermore, note that all features are regularized before using the elastic net to allow for the coefficients to be penalized equally.  Mathematically, this means that for each feature $x_i$ we subtract the mean of the $x_i$ such that $$\sum\limits_{j=1}^n x_j(i) = 0$$ Where $x_j(i)$ denotes the ith feature of the jth player-game.  We then divide each $x_j(i)$ by the standard deviation of the $x_i$s.  
 
-The result of this is a linear model for each position, which predicts how many daily fantasy points.  The models, along with an interpretation, are given in files TODO TODO.  They are not included here because there are over 100 features so it would take the majority of the paper.  
+The result of this is a linear model for each position, which predicts how many daily fantasy points.  The models, along with an interpretation, are given in files models.pdf.  They are not included here because there are over 100 features so it would take the majority of the paper.  
 
 Given these models, we can generate the expected value of fantasy points for each player by plugging their scraped data into the model.  We can further generate their variance by going through their projections for previous games and seeing how much they deviate from the model.  This allows us to generate our expectedvalues and residPOSITION csv files.  Each row of expectedvalues is of form \\
 
@@ -145,7 +146,7 @@ Our lineup generator will read in these files and use them to generate lineups w
 
 \section{Generating the lineups} 
 \label{li}
-The code referenced in this section is found in the lineup folder, in set\_lineups.py 
+\emph{The code referenced in this section is found in the lineup folder, in bin/set\_lineups.py } \\
 
 Now that we have the projections, we need to generate some lineups to submit that we hope will make money!  A formalization of this problem is as follows: \\
 
@@ -166,7 +167,7 @@ The code that does the process described in this subsection is located at the be
 
 Before we begin generating lineups, we need to figure out our threshold for expected value for the lineups (we will reject lineups whose expected value is below this).  We decide to do this by generating lineups using our lineup generator (discussed in the next section, section \ref{ge}) and taking the minimum expected value of lineups in the top X\%.  \\
 
-X was tuned using past data by selecting an X such that on average, our threshold was above the money.  Note that we can't just lower X to arbitrarily low numbers, because then we may be unable to find lineups and they will heavily depend on the same players.  Furthermore, by getting some breathing room with a slightly higher X, we are able to focus more on variance, increasing the chances that our lineups make money.  We will call this threshold T.  \\
+X was tuned using past data by selecting an X such that on average, our threshold was above the money.  Note that we can't just lower X to arbitrarily low numbers, because then we may be unable to find lineups and they will heavily depend on the same players.  Furthermore, by getting some breathing room with a slightly higher X, we are able to focus more on variance, increasing the chances that our lineups make money. We set X=2.  We will call this threshold T.  \\
 
 \subsection{Lineup Generator}
 \label{ge}
@@ -190,17 +191,74 @@ Now that we have a tool for generating a single lineup, we would like to be able
 
 1) Fill a box with n lineups, where n is the number of lineups you would like to generate.  \\
 2) Shake the box k times, where a box shake is defined as follows: \\
-a) For each player, assign the player a score by sampling a number from a normal distribution centered at his expected value with standard deviation equal to his past standard deviation.  
-b) For each lineup in the box, add the scores of the players. Compute the median score.
-c) For each lineup in the box below the median score, flip a coin.  If it's heads, remove the lineup from the box.  
-d) For each lineup that was removed from the box, add a new lineup from get\_lineup into the box.
-e) If a lineup has survived for 10 box shakes, but was not in the initial box lineup, save it.
+a) For each player, assign the player a score by sampling a number from a normal distribution centered at his expected value with standard deviation equal to his past standard deviation.  \\
+b) For each lineup in the box, add the scores of the players. Compute the median score. \\
+c) For each lineup in the box below the median score, flip a coin.  If it's heads, remove the lineup from the box.   \\
+d) For each lineup that was removed from the box, add a new lineup from get\_lineup into the box. \\
+\\
 
-After k shakes, all the saved lineups are those that we would submit.  We order these in the probability that the lineup will score below T using the normal distribution formula, where both the expected value and variance of the lineup is simply the sum of those values of its players (this is a well known fact for normal variables).  
+After k shakes, we print all the lineups in the box.  We order these in the number of shakes that the lineup has survived, with the lineups surviving the most shakes (which we expect to be the best lineups) at the top.  k is set to be an arbitrarily large number, typically on the order of the size of the box.  \\
 
 The rationale behind the box shaking is that if a single player has a bad game, many of the lineups depending on it will be removed from the box, which will remove dependencies on certain players.  
 
 \section{Taking it out for a spin!}
 \label{ga}
-To run an initial test of the efficacy of our program, we entered the three lineups with the highest expected values into DraftKings contests. These lineups had a large amount of overlap because our model likes specific players but the lineups also had significant differences as well. 
+We will use our model to predict the games on Monday December 21.   You can see a visual representation of our linear regression model in our appendix. In the appendix, the features whose points are farthest away from the x-axis are the most significant.  The features that we found to be most significant for each of the 5 NBA positions are: \\
+
+C: Minutes Played - last 10 games, Minutes Played - last 5 game, Points -  last 10 games, Opp-Chi, Opp-NY, Opp-UTA, DefensiveRebounds-10 \\PF: Minutes Played -  last 10 games, Minutes Played - last 5 games, Opp-PHO, Field Goal Attempts - last 10 games, Turnovers - last 10 games, Steals - last 10 games, Points - last 10 games \\SF:  Minutes Played -  last 10 games, Minutes Played - last 5 games, Opp-Hou, Opp-Cle, Points- last 10 games, FieldGoalAttempts - last 10 games, defensive rebounds - last 10 games\\SG: Minutes Played -  last 10 games, Minutes Played - last 5 games, Opp-Was, FieldGoalAttempts - last 10 games, defensive rebounds - last 10 games, points - last 10 games \\PG: Minutes Played -  last 10 games, Minutes Played - last 5 games, FieldGoalAttempts - last 10 games, defensive rebounds - last 10 games, points - last 10 games, steals- last 10 games,FieldGoalAttempts - last 5 games \\
+
+In figure 2, we show off the UI of our program, which is on the command line. \\
+
+You can see the generated lineups in figure 3.  
+\begin{figure}[h]
+\label{lines}
+\includegraphics{ui.png}
+\caption{A screenshot of how to run our program}
+\end{figure}
+
+
+\begin{figure}
+\label{lines}
+\includegraphics{lineups.png}
+\caption{A screenshot of the lineups it generated, followed by their expected points scored, total salary cost of the team, and number of shakes of the box it survived}
+\end{figure}
+\newpage
+
+
+\section{Installing depended packages}
+\label{in}
+First, clone the github repository by running  \\
+
+git clone https://github.com/dhatch/schneiderman.git \\
+
+Change into the project directory by running \\
+
+cd schneiderman \\
+
+First, you should create a virtual environment with the command\\
+
+virtualenv env \\
+
+Then activate the environment with the command \\
+
+source env/bin/activate\\
+
+Then, to install the depended packages, use the command \\
+
+pip install -r requirements.txt  \\
+
+The packages required are lxml, numpy, pandas, requests, scipy, iphython, python-dateutil, pony, docopt, fuzzywuzzy, python-Levenshtein, and scikit-learn. \\
+
+Then, \\
+
+source ./bin/set\_env \\
+
+To run the program use the command \\
+
+./bin/run\_pipeline DKSalaries.csv 12/21/15
+
+which will run all the requisite files in order. \\
+
+./bin/run\_pipeline takes two parameters. The first parameter is the csv file downloaded from Draftkings.com. There is one in the samples folder labeled as "DKSalaries.csv". The second parameter is the date of the contest, which for the sample is 12/21/15. Running this prints our recommended lineups, expected points, and salary to stdout. 
+
  \end{document}
