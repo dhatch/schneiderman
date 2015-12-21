@@ -59,7 +59,7 @@ target/
 data/
 .DS_Store
 
-paper/*.pdf
+paper/paper.pdf
 paper/*.aux
 paper/*.gz
 *~
